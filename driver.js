@@ -4,14 +4,13 @@
     reader = new FileReader;
     reader.onload = function(){
       assemble(this.result);
-      return console.log(hack.ROM.map(function(it){
-        return it.toString();
-      }).join('\n'));
+      console.log('assembled!');
+      return hack.reset();
     };
     reader.readAsText(this.files[0]);
   });
   document.getElementById('start').addEventListener('click', function(){
-    hack.boot();
+    hack.start();
   });
   document.getElementById('stop').addEventListener('click', function(){
     hack.stop();
@@ -22,4 +21,5 @@
   document.getElementById('step').addEventListener('click', function(){
     hack.step();
   });
+  hack.canvas = document.getElementById('canvas').getContext('2d');
 }).call(this);
