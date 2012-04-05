@@ -1,0 +1,45 @@
+#attach hack to global object
+@hack = 
+	# ROM is just an array of functions
+	# so there's no point in using a typed array
+	# the assembler creates this array when it recieves input
+	# ROM: []
+
+	# store reference to the next instruction run
+	# so user can stop execution
+	timeout: void
+	# clock speed (setTimeout delay), defaulting to 0
+	# to allow cpu to run as fast as possible
+	clock: 0
+
+	# since M is a meta register, recreate its functionality using ES5 getters and setters
+	M:~ -> hack.RAM[ hack.A ]	
+	M:~ (it) -> hack.RAM[ hack.A ] = it
+
+	# beep boop
+	boot: ->
+		# two bytes per 16 bit int
+		# RAM is cleared on boot
+		hack.RAMbuffer = new ArrayBuffer 24576 * 2
+		hack.RAM = new Int16Array RAMBuffer
+
+		# init real registers
+		hack.A = 0
+		hack.D = 0
+
+		hack.PC = 0
+		
+		# read first instruction
+		hack.timeout = setTimeout hack.exec, 0
+
+	# the reason we must use setTimeout is because
+	# the single browser javascript thread will block until finished,
+	# preventing any screen redrawing or keyboard interrupts
+	# 
+	# By using setTimeout, JS will add the next instruction to
+	# the execution queue, enabling any queued keyboard/screen redraws
+	# to execute before the next instruction
+	exec: ->
+		hack.ROM[ ++hack.PC ]! # execute current instruction and increment PC
+		hack.timeout = setTimeout hack.exec 0 # queue next instruction
+

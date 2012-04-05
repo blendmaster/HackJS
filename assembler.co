@@ -1,0 +1,84 @@
+# constants
+
+# the code inside the if statement equivalent to the jump
+jumps = 
+	JGT: 'result > 0'
+	JEQ: 'result === 0'
+	JGE: 'result >= 0'
+	JLT: 'result < 0'
+	JNE: 'result !== 0'
+	JLE: 'result <= 0'
+	JMP: 'true'
+
+symbols = # start with builtins
+	SP: 0
+	LCL: 1
+	ARG: 2
+	THIS: 3
+	THAT: 4
+	SCREEN: 16384
+	KBD: 24576
+symbols["R#i"] = i for i to 15 # register locations
+
+regex =
+	label: /\(([A-Za-z\._$:][\w\.$:]*)\)$/
+
+	A: /^@(.+)$/ # could be more strict about what the label is, but who really cares
+
+	# thanks to Connor McKay https://gist.github.com/1875338
+	C: //^ 
+		(?:(?=[AMD])(A?M?D?)=)? # destination
+		(
+			[AMD][+\-&|][AMD1] | # binary operations
+			[\-!]?[AMD01] # unary operations
+		)
+		(?:;(J(?:[GL][ET]|EQ|NE|MP)))? # jump
+		$//
+
+# assemble hack assembly into javascript functions
+# attached to global object
+@assemble = (input) ->
+	return '' if input is '' # split blank input generates one blank string, which breaks the parser ;_;
+
+	len = 0 # keep track of the number of user-defined labels
+	variables = {} # keep track of variable names
+	loc = 16 # start variables at ram address 16
+
+	# fill ROM array with functions representing instructions
+	hack.ROM = input
+		.replace /\/\/.*/gm '' # remove comments
+		.trim!
+		.split /\s+/ # turn into lines
+		.filter (it, i) -> # build symbol table and remove labels
+			if regex.label.exec it
+				symbols[that[1]] = i - len++ # len++ adjusts the symbol's line number to the filtered array
+				return false
+			true # keep actual instructions
+		.map -> # parse instructions
+			if symbol = (regex.A.exec it )?1 # convert A instructions
+				if symbols[symbol] 
+					int = that
+				else unless isNaN(that = parseInt symbol, 10) # numeric constant
+					int = that
+				else # set mapped location or the next available one
+					int = variables[symbol] ?= loc++
+
+				# instruction assigns A to that value
+				# int is closed over, but since it is just an int value, it is closed
+				# by value, instead of keeping the expensive if statment inside the
+				# closure
+				-> hack.A = int
+			else if regex.C.exec it # convert C instructions
+				[ ,dest,comp,jump] = that
+				# dynamically build a function with string evaluation
+				# need to append hack. object to AMD, and replace ! boolean negation
+				# with ~ bitwise negation. The jump is replaced with an if statement to
+				# set the PC to A's value (jump)
+				new Function "
+					var result = #{comp.replace /[AMD]/ 'hack.$&' .replace /!/ \~};
+					#{dest.replace /[AMD]/g 'hack.$& = '} = result;
+					#{if jump then "if( #{ jumps[jump] }) { PC = hack.A; }" else ''}
+				"
+			else
+				throw "invalid instruction: \"#it\""
+
