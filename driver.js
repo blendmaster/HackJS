@@ -1,13 +1,18 @@
 (function(){
   document.getElementById('file').addEventListener('change', function(){
-    var reader;
+    var reader, start;
     reader = new FileReader;
+    start = document.getElementById('start');
+    start.disabled = true;
+    start.textContent = "assembling..";
     reader.onload = function(){
       assemble(this.result);
       if (hack.ROM.length > 32768) {
         alert("Sorry, your program is too big to fit in 32K of ROM instruction memory!");
       }
-      return hack.reset();
+      hack.reset();
+      start.textContent = "Start";
+      return start.disabled = false;
     };
     reader.readAsText(this.files[0]);
   });

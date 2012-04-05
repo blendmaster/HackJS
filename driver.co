@@ -1,11 +1,16 @@
 document.getElementById \file .addEventListener \change !->
 	reader = new FileReader
 
+	start = document.getElementById \start
+	start.disabled = true
+	start.textContent = "assembling.."
 	reader.onload = ->
 		assemble @result
 		if hack.ROM.length > 32768
 			alert "Sorry, your program is too big to fit in 32K of ROM instruction memory!"
 		hack.reset!
+		start.textContent = "Start"
+		start.disabled = false
 	
 	reader.readAsText @files.0
 
