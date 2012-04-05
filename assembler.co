@@ -38,7 +38,7 @@ regex =
 # assemble hack assembly into javascript functions
 # attached to global object
 @assemble = (input) ->
-	return '' if input is '' # split blank input generates one blank string, which breaks the parser ;_;
+	return if input is '' # split blank input generates one blank string, which breaks the parser ;_;
 
 	len = 0 # keep track of the number of user-defined labels
 	variables = {} # keep track of variable names
@@ -63,11 +63,7 @@ regex =
 				else # set mapped location or the next available one
 					int = variables[symbol] ?= loc++
 
-				# instruction assigns A to that value
-				# int is closed over, but since it is just an int value, it is closed
-				# by value, instead of keeping the expensive if statment inside the
-				# closure
-				-> hack.A = int
+				new Function "hack.A = #{int};"
 			else if regex.C.exec it # convert C instructions
 				[ ,dest,comp,jump] = that
 				# dynamically build a function with string evaluation
@@ -75,10 +71,8 @@ regex =
 				# with ~ bitwise negation. The jump is replaced with an if statement to
 				# set the PC to A's value (jump)
 				new Function "
-					var result = #{comp.replace /[AMD]/ 'hack.$&' .replace /!/ \~};
-					#{dest.replace /[AMD]/g 'hack.$& = '} = result;
-					#{if jump then "if( #{ jumps[jump] }) { PC = hack.A; }" else ''}
-				"
+					var result = #{comp.replace /[AMD]/g 'hack.$&' .replace /!/ \~};
+					#{if dest then "#{dest.replace /[AMD]/g 'hack.$& = '} result;" else ''}
+					#{if jump then "if(#{jumps[jump]}){hack.PC=hack.A;}" else ''}"
 			else
 				throw "invalid instruction: \"#it\""
-

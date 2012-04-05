@@ -1,0 +1,8 @@
+document.getElementById \file .addEventListener \change !->
+	reader = new FileReader
+
+	reader.onload = ->
+		assemble @result
+		console.log hack.ROM.map(-> it.toString!).join \\n
+	
+	reader.readAsText @files.0
