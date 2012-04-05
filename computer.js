@@ -1,7 +1,5 @@
 (function(){
   this.hack = {
-    timeout: void 8,
-    clock: 0,
     get M(){
       return this.RAM[this.A];
     },
@@ -16,7 +14,7 @@
           this.screen.data[i + 1] = pixel;
           this.screen.data[i + 2] = pixel;
         }
-        this.refresh();
+        this.canvas.putImageData(this.screen, 0, 0);
       }
       this.RAM[this.A] = it;
     },
@@ -24,7 +22,6 @@
     running: false,
     stop: function(){
       this.running = false;
-      clearTimeout(this.timeout);
     },
     reset: function(){
       this.stop();
@@ -42,33 +39,38 @@
       this.booted = true;
     },
     start: function(){
-      console.log('starting...');
-      if (!this.booted) {
-        this.boot();
+      if (!hack.booted) {
+        hack.boot();
       }
-      this.running = true;
-      this.timeout = setTimeout(this.exec, this.clock);
+      hack.running = true;
+      while (hack.PC < hack.ROM.length) {
+        hack.ROM[hack.PC++]();
+        if (hack.A === 24576) {
+          setTimeout(hack['continue'], 0);
+          return;
+        }
+      }
+      hack.running = false;
+    },
+    'continue': function(){
+      if (hack.running) {
+        while (hack.PC < hack.ROM.length) {
+          hack.ROM[hack.PC++]();
+          if (hack.A === 24576) {
+            setTimeout(hack['continue'], 0);
+            return;
+          }
+        }
+      }
+      hack.running = false;
     },
     step: function(){
       if (!this.booted) {
         this.boot();
       }
-      console.log("next instruction " + this.ROM[this.PC].toString());
       if (this.PC < this.ROM.length) {
         this.ROM[this.PC++]();
       }
-      console.log("after A: " + this.A + " D: " + this.D + " M: " + this.M + " PC: " + this.PC);
-    },
-    exec: function(){
-      hack.ROM[hack.PC++]();
-      if (hack.PC < hack.ROM.length) {
-        hack.timeout = setTimeout(hack.exec, hack.clock);
-      } else {
-        hack.running = false;
-      }
-    },
-    refresh: function(){
-      this.canvas.putImageData(this.screen, 0, 0);
     },
     keys: {
       13: 128,

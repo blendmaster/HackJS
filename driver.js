@@ -4,7 +4,9 @@
     reader = new FileReader;
     reader.onload = function(){
       assemble(this.result);
-      console.log('assembled!');
+      if (hack.ROM.length > 32768) {
+        alert("Sorry, your program is too big to fit in 32K of ROM instruction memory!");
+      }
       return hack.reset();
     };
     reader.readAsText(this.files[0]);

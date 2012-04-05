@@ -5,13 +5,6 @@
 	# the assembler creates this array when it recieves input
 	# ROM: []
 
-	# store reference to the next instruction run
-	# so user can stop execution
-	timeout: void
-	# clock speed (setTimeout delay), defaulting to 0
-	# to allow cpu to run as fast as possible
-	clock: 0
-
 	# since M is a meta register, recreate its functionality using ES5 getters and setters
 	M:~ -> @RAM[ @A ]	
 	M:~ (it) -> 
@@ -27,8 +20,9 @@
 				@screen.data[ i ] = pixel #R
 				@screen.data[ i + 1 ] = pixel #G
 				@screen.data[ i + 2 ] = pixel #B
-
-			@refresh!
+			
+			# redraw screen
+			@canvas.putImageData @screen, 0 0
 
 		# store memory
 		@RAM[ @A ] = it
@@ -38,7 +32,6 @@
 
 	stop: !-> 
 		@running = false
-		clearTimeout @timeout
 
 	reset: !->
 		@stop!
@@ -66,38 +59,35 @@
 
 		@booted = true
 
-	# start setTimeout for next instruction
 	start: !-> 
-		console.log \starting...
-		@boot! unless @booted
-		@running = true
-		@timeout = setTimeout @exec, @clock
+		hack.boot! unless hack.booted
+		hack.running = true
+		while hack.PC < hack.ROM.length
+			hack.ROM[ hack.PC++ ]!  #run next instruction
+			# if A is 24576 after the last instruction
+			# we're going to assume the program wants keyboard access.
+			# to do so, we need to pause execution with setTimeout, so the last keyup
+			# handler callback gets processed in javascript thread queue.
+			# this is fairly safe, since 99% of the time, when A is 24576, the next
+			# instruction will be reading M.
+			if hack.A is 24576
+				setTimeout hack.continue, 0
+				return # stop current function
+		hack.running = false
+
+	continue: !->
+		if hack.running 
+			while hack.PC < hack.ROM.length
+				hack.ROM[ hack.PC++ ]!  #run next instruction
+				if hack.A is 24576
+					setTimeout hack.continue, 0
+					return # stop current function
+		hack.running = false
 
 	# execute current instruction and increment PC
 	step: !-> 
 		@boot! unless @booted
-		console.log "next instruction #{@ROM[@PC].toString!}"
 		@ROM[ @PC++ ]! if @PC < @ROM.length
-		console.log "after A: #{@A} D: #{@D} M: #{@M} PC: #{@PC}"
-
-	# the reason we must use setTimeout is because
-	# the single browser javascript thread will block until finished,
-	# preventing any screen redrawing or keyboard interrupts
-	# 
-	# By using setTimeout, JS will add the next instruction to
-	# the execution queue, enabling any queued keyboard/screen redraws
-	# to execute before the next instruction
-	#
-	# not using @this in here because setTimeout calls the raw function without
-	# context of the hack object
-	exec: !->
-		hack.ROM[ hack.PC++ ]! 
-		if hack.PC < hack.ROM.length
-			hack.timeout = setTimeout hack.exec, hack.clock # queue next instruction
-		else
-			hack.running = false
-
-	refresh: !-> @canvas.putImageData @screen, 0 0
 
 	# remap some keys to hack spec
 	keys:

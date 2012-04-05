@@ -3,7 +3,8 @@ document.getElementById \file .addEventListener \change !->
 
 	reader.onload = ->
 		assemble @result
-		console.log \assembled!
+		if hack.ROM.length > 32768
+			alert "Sorry, your program is too big to fit in 32K of ROM instruction memory!"
 		hack.reset!
 	
 	reader.readAsText @files.0
@@ -21,3 +22,5 @@ document.addEventListener \keydown hack.keyboard
 document.addEventListener \keyup hack.clearkeyboard
 
 hack.status = document.getElementById \status
+
+
