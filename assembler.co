@@ -21,7 +21,7 @@ symbols = # start with builtins
 symbols["R#i"] = i for i to 15 # register locations
 
 regex =
-	label: /\(([A-Za-z\._$:][\w\.$:]*)\)$/
+	label: /\(([A-Za-z\._$:][\w\.$:\-_]*)\)$/
 
 	A: /^@(.+)$/ # could be more strict about what the label is, but who really cares
 

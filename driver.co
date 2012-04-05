@@ -15,3 +15,9 @@ document.getElementById \step .addEventListener \click !-> hack.step!
 
 # set computer's screen context to canvas element
 hack.canvas = document.getElementById \canvas .getContext \2d
+
+# listen on document for key events
+document.addEventListener \keydown hack.keyboard
+document.addEventListener \keyup hack.clearkeyboard
+
+hack.status = document.getElementById \status

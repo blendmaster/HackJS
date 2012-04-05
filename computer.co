@@ -10,13 +10,14 @@
 	timeout: void
 	# clock speed (setTimeout delay), defaulting to 0
 	# to allow cpu to run as fast as possible
-	clock: 100
+	clock: 0
 
 	# since M is a meta register, recreate its functionality using ES5 getters and setters
 	M:~ -> @RAM[ @A ]	
 	M:~ (it) -> 
 		# write to and refresh screen if necessary
 		# lots of dirty work to transform jack memory map into pixels
+		console.log @A if @A > 16384
 		if 16384 <= @A <= 24575 
 			# each screen word is 16 pixels and each @screen pixel is 4 bytes (RGBA)
 			offset = ( @A - 16384 ) * 16 * 4
@@ -34,8 +35,11 @@
 		@RAM[ @A ] = it
 
 	booted: false
+	running: false
 
-	stop: !-> clearTimeout @timeout
+	stop: !-> 
+		@running = false
+		clearTimeout @timeout
 
 	reset: !->
 		@stop!
@@ -45,7 +49,8 @@
 	boot: !->
 		# two bytes per 16 bit int
 		# RAM is cleared on boot
-		@RAMBuffer = new ArrayBuffer 24576 * 2
+		# length 24577 since address 24576 is the keyboard map
+		@RAMBuffer = new ArrayBuffer 24577 * 2
 		@RAM = new Int16Array @RAMBuffer
 
 		# init real registers
@@ -65,6 +70,8 @@
 	# start setTimeout for next instruction
 	start: !-> 
 		console.log \starting...
+		@boot! unless @booted
+		@running = true
 		@timeout = setTimeout @exec, @clock
 
 	# execute current instruction and increment PC
@@ -85,10 +92,62 @@
 	# not using @this in here because setTimeout calls the raw function without
 	# context of the hack object
 	exec: !->
-		console.log "PC: #{hack.PC}"
-		console.log hack.ROM[hack.PC].toString!
+		hack.status.textContent =  hack.PC
 		hack.ROM[ hack.PC++ ]! 
 		if hack.PC < hack.ROM.length
 			hack.timeout = setTimeout hack.exec, hack.clock # queue next instruction
 
 	refresh: !-> @canvas.putImageData @screen, 0 0
+
+	# remap some keys to hack spec
+	keys:
+		13: 128 # enter
+		8: 129 # backspace
+		37: 130 # left arrow
+		38: 131 # up arrow
+		39: 132 # right arrow
+		40: 133 # down arrow
+		36: 134 # home
+		35: 135 # end
+		33: 136 # page up
+		34: 137 # page down
+		46: 139 # delete
+		27: 140 # escape
+		# f1-f12
+		112: 141
+		113: 142
+		114: 143
+		115: 144
+		116: 145
+		117: 146
+		118: 147
+		119: 148
+		120: 149
+		121: 150
+		122: 151
+		123: 152
+		# ASCII keys that javascript doesn't map correctly
+		186: 59 # ;
+		187: 61 # =
+		188: 44 # ,
+		189: 45 # -
+		190: 46 # .
+		191: 47 # /
+		192: 96 # `
+		219: 91 # [
+		220: 92 # \
+		221: 93 # ]
+		222: 39 # '
+		# javascript has these weird math key codes that override = and -
+		107: 61
+		109: 45
+
+	keyboard: ({keyCode: key}: e) ->
+		# XXX pressing unsupport hack keys, but supported js keys,
+		# like shift, ctrl, etc will change RAM, but won't really be valid in hack
+		hack.RAM[24576] = hack.keys[key] or key if hack.booted # remapped or just ascii
+		e.preventDefault! if hack.running # prevent browser from stealing keypresses
+
+	clearkeyboard: -> hack.RAM[24576] = 0 if hack.booted
+
+

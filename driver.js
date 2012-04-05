@@ -22,4 +22,7 @@
     hack.step();
   });
   hack.canvas = document.getElementById('canvas').getContext('2d');
+  document.addEventListener('keydown', hack.keyboard);
+  document.addEventListener('keyup', hack.clearkeyboard);
+  hack.status = document.getElementById('status');
 }).call(this);
