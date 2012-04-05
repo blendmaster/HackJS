@@ -1,24 +1,47 @@
 (function(){
   this.hack = {
     timeout: void 8,
-    clock: 0,
+    clock: 100,
     get M(){
-      return hack.RAM[hack.A];
+      return this.RAM[this.A];
     },
     set M(it){
-      hack.RAM[hack.A] = it;
+      this.RAM[this.A] = it;
+    },
+    booted: false,
+    stop: function(){
+      clearTimeout(this.timeout);
+    },
+    reset: function(){
+      this.stop();
+      this.boot();
     },
     boot: function(){
-      hack.RAMbuffer = new ArrayBuffer(24576 * 2);
-      hack.RAM = new Int16Array(RAMBuffer);
-      hack.A = 0;
-      hack.D = 0;
-      hack.PC = 0;
-      return hack.timeout = setTimeout(hack.exec, 0);
+      this.RAMBuffer = new ArrayBuffer(24576 * 2);
+      this.RAM = new Int16Array(this.RAMBuffer);
+      this.A = 0;
+      this.D = 0;
+      this.PC = 0;
+      this.booted = true;
+    },
+    start: function(){
+      this.timeout = setTimeout(this.exec, this.clock);
+    },
+    step: function(){
+      if (!this.booted) {
+        this.boot();
+      }
+      console.log("next instruction " + this.ROM[this.PC].toString());
+      if (this.PC < this.ROM.length) {
+        this.ROM[this.PC++]();
+      }
+      console.log("after A: " + this.A + " D: " + this.D + " M: " + this.M + " PC: " + this.PC);
     },
     exec: function(){
-      hack.ROM[++hack.PC]();
-      return hack.timeout = setTimeout(hack.exec(0));
+      hack.ROM[hack.PC++]();
+      if (hack.PC < hack.ROM.length) {
+        hack.timeout = setTimeout(hack.exec, hack.clock);
+      }
     }
   };
 }).call(this);

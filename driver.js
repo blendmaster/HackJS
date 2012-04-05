@@ -10,4 +10,16 @@
     };
     reader.readAsText(this.files[0]);
   });
+  document.getElementById('start').addEventListener('click', function(){
+    hack.boot();
+  });
+  document.getElementById('stop').addEventListener('click', function(){
+    hack.stop();
+  });
+  document.getElementById('reset').addEventListener('click', function(){
+    hack.reset();
+  });
+  document.getElementById('step').addEventListener('click', function(){
+    hack.step();
+  });
 }).call(this);

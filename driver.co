@@ -3,6 +3,11 @@ document.getElementById \file .addEventListener \change !->
 
 	reader.onload = ->
 		assemble @result
-		console.log hack.ROM.map(-> it.toString!).join \\n
+		hack.reset!
 	
 	reader.readAsText @files.0
+
+document.getElementById \start .addEventListener \click !-> hack.boot!
+document.getElementById \stop .addEventListener \click !-> hack.stop!
+document.getElementById \reset .addEventListener \click !-> hack.reset!
+document.getElementById \step .addEventListener \click !-> hack.step!

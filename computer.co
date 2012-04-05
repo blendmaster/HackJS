@@ -10,27 +10,44 @@
 	timeout: void
 	# clock speed (setTimeout delay), defaulting to 0
 	# to allow cpu to run as fast as possible
-	clock: 0
+	clock: 100
 
 	# since M is a meta register, recreate its functionality using ES5 getters and setters
-	M:~ -> hack.RAM[ hack.A ]	
-	M:~ (it) -> hack.RAM[ hack.A ] = it
+	M:~ -> @RAM[ @A ]	
+	M:~ (it) -> @RAM[ @A ] = it
+
+	booted: false
+
+	stop: !-> clearTimeout @timeout
+
+	reset: !->
+		@stop!
+		@boot!
 
 	# beep boop
-	boot: ->
+	boot: !->
 		# two bytes per 16 bit int
 		# RAM is cleared on boot
-		hack.RAMbuffer = new ArrayBuffer 24576 * 2
-		hack.RAM = new Int16Array RAMBuffer
+		@RAMBuffer = new ArrayBuffer 24576 * 2
+		@RAM = new Int16Array @RAMBuffer
 
 		# init real registers
-		hack.A = 0
-		hack.D = 0
+		@A = 0
+		@D = 0
 
-		hack.PC = 0
-		
-		# read first instruction
-		hack.timeout = setTimeout hack.exec, 0
+		@PC = 0
+
+		@booted = true
+
+	# start setTimeout for next instruction
+	start: !-> @timeout = setTimeout @exec, @clock
+
+	# execute current instruction and increment PC
+	step: !-> 
+		@boot! unless @booted
+		console.log "next instruction #{@ROM[@PC].toString!}"
+		@ROM[ @PC++ ]! if @PC < @ROM.length
+		console.log "after A: #{@A} D: #{@D} M: #{@M} PC: #{@PC}"
 
 	# the reason we must use setTimeout is because
 	# the single browser javascript thread will block until finished,
@@ -39,7 +56,11 @@
 	# By using setTimeout, JS will add the next instruction to
 	# the execution queue, enabling any queued keyboard/screen redraws
 	# to execute before the next instruction
-	exec: ->
-		hack.ROM[ ++hack.PC ]! # execute current instruction and increment PC
-		hack.timeout = setTimeout hack.exec 0 # queue next instruction
+	#
+	# not using @this in here because setTimeout calls the raw function without
+	# context of the hack object
+	exec: !->
+		hack.ROM[ hack.PC++ ]! 
+		if hack.PC < hack.ROM.length
+			hack.timeout = setTimeout hack.exec, hack.clock # queue next instruction
 
