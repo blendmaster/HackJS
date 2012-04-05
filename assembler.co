@@ -10,16 +10,6 @@ jumps =
 	JLE: 'result <= 0'
 	JMP: 'true'
 
-symbols = # start with builtins
-	SP: 0
-	LCL: 1
-	ARG: 2
-	THIS: 3
-	THAT: 4
-	SCREEN: 16384
-	KBD: 24576
-symbols["R#i"] = i for i to 15 # register locations
-
 regex =
 	label: /\(([A-Za-z\._$:][\w\.$:\-_]*)\)$/
 
@@ -44,6 +34,16 @@ regex =
 	variables = {} # keep track of variable names
 	loc = 16 # start variables at ram address 16
 
+	symbols = # start with builtins
+		SP: 0
+		LCL: 1
+		ARG: 2
+		THIS: 3
+		THAT: 4
+		SCREEN: 16384
+		KBD: 24576
+	symbols["R#i"] = i for i to 15 # register locations
+
 	# fill ROM array with functions representing instructions
 	hack.ROM = input
 		.replace /\/\/.*/gm '' # remove comments
@@ -56,10 +56,10 @@ regex =
 			true # keep actual instructions
 		.map -> # parse instructions
 			if symbol = (regex.A.exec it )?1 # convert A instructions
-				if symbols[symbol] 
+				if symbols[symbol]?
 					int = that
-				else unless isNaN(that = parseInt symbol, 10) # numeric constant
-					int = that
+				else if not isNaN(num = parseInt symbol, 10) # numeric constant
+					int = num
 				else # set mapped location or the next available one
 					int = variables[symbol] ?= loc++
 
@@ -71,8 +71,7 @@ regex =
 				# with ~ bitwise negation. The jump is replaced with an if statement to
 				# set the PC to A's value (jump)
 				new Function "
-					var result = #{comp.replace /[AMD]/g 'hack.$&' .replace /!/ \~};
-					#{if dest then "#{dest.replace /[AMD]/g 'hack.$& = '} result;" else ''}
+					var result = #{if dest then "#{dest.replace /[AMD]/g 'hack.$& = '}" else ''}#{comp.replace /[AMD]/g 'hack.$&' .replace /!/ \~};
 					#{if jump then "if(#{jumps[jump]}){hack.PC=hack.A;}" else ''}"
 			else
 				throw "invalid instruction: \"#it\""

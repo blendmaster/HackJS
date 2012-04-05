@@ -17,7 +17,6 @@
 	M:~ (it) -> 
 		# write to and refresh screen if necessary
 		# lots of dirty work to transform jack memory map into pixels
-		console.log @A if @A > 16384
 		if 16384 <= @A <= 24575 
 			# each screen word is 16 pixels and each @screen pixel is 4 bytes (RGBA)
 			offset = ( @A - 16384 ) * 16 * 4
@@ -92,10 +91,11 @@
 	# not using @this in here because setTimeout calls the raw function without
 	# context of the hack object
 	exec: !->
-		hack.status.textContent =  hack.PC
 		hack.ROM[ hack.PC++ ]! 
 		if hack.PC < hack.ROM.length
 			hack.timeout = setTimeout hack.exec, hack.clock # queue next instruction
+		else
+			hack.running = false
 
 	refresh: !-> @canvas.putImageData @screen, 0 0
 

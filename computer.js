@@ -7,9 +7,6 @@
     },
     set M(it){
       var offset, p, i, pixel, _ref, _to;
-      if (this.A > 16384) {
-        console.log(this.A);
-      }
       if (16384 <= (_ref = this.A) && _ref <= 24575) {
         offset = (this.A - 16384) * 16 * 4;
         p = 0;
@@ -63,10 +60,11 @@
       console.log("after A: " + this.A + " D: " + this.D + " M: " + this.M + " PC: " + this.PC);
     },
     exec: function(){
-      hack.status.textContent = hack.PC;
       hack.ROM[hack.PC++]();
       if (hack.PC < hack.ROM.length) {
         hack.timeout = setTimeout(hack.exec, hack.clock);
+      } else {
+        hack.running = false;
       }
     },
     refresh: function(){
