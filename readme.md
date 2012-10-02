@@ -2,7 +2,7 @@
 
 This webapp compiles Hack Assembly from the textbook [Elements of Computing Systems](http://www1.idc.ac.il/tecs/) into javascript and runs them, emulating the screen with a `<canvas>` element, and the keyboard input through DOM events.
 
-Don't get too excited if you wrote anything in the Jack high level language though. Due to its inefficiencies, most programs don't fit into the 32K of addressable ROM on the Hack platform. For that, a translation of their VM intermediate language is necessary.
+Don't get too excited if you wrote anything in the Jack high level language though. Due to its inefficiencies, most programs don't fit into the 32K of addressable ROM on the Hack platform. For that, a [translation of their VM intermediate language is necessary](https://github.com/blendmaster/HackVM).
 
 Also, due to the immediate nature of keyboard input and screen drawing of the Hack platform, along with the single-threaded nature of browser javascript, this emulator runs extremely slowly. Depending on your assembly program, expect to wait for more than 10 seconds before anything shows up on the screen.
 
